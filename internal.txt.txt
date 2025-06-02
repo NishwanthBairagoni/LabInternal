@@ -1,1 +1,358 @@
 Hi all Welcome Nish
+
+[02-06-2025 12:05 PM] Nishwanth CSD CMRIT: // week 9 Create deployment resource using Kubernetes. 
+
+1) enable kubernetes engine API 
+
+2) create a cluster (gcloud container clusters create my-cluster --zone us-central1-a)
+gcloud container clusters create my-cluster \
+  --zone us-central1-a \
+  --num-nodes 2 \
+  --machine-type e2-medium \
+  --disk-size 50GB
+  
+3) check cluster is created or not 
+
+gcloud container clusters list
+
+4) Downloads the cluster credentials
+
+gcloud container clusters get-credentials my-cluster --zone us-central1-a 
+
+5) To see the list  of nodes
+
+kubectl get nodes 
+
+6) for creating pods 
+
+kubectl run --image tomcat webserver
+
+7) To see the list of pods
+
+kubectl get pods
+
+8) To get the list of pods along with ip address and which node the pod is running
+
+kubectl get pods -o wide
+
+9) creating yaml file 
+
+vim pd-df1.yaml (command)
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jenkins-pod
+spec:
+  containers:
+    - name: myjenkins
+      image: jenkins/jenkins
+      ports:
+        - containerPort: 8080
+          hostPort: 8080
+
+
+for creating Kubernetes resources from a YAML file.
+
+kubectl create -f pd-df1.yaml
+
+
+
+10) for opening port 
+
+gcloud compute firewall-rules create rule2 --allow tcp:8080 
+
+11) kubectl get pods -o wide
+
+kubectl get nodes -o wide
+
+12) copy external ip and search by concatinating with :8080
+
+that's it.
+
+
+
+Delete cluster
+disable kubernetes engine API 
+
+==================================================================================================
+
+
+
+
+//week 11  Setup Grafana for Devops.
+
+1) enable kubernetes engine API
+
+2) Create cluster 
+
+gcloud container clusters create my-cluster \
+  --zone us-central1-a \
+  --num-nodes 2 \
+  --machine-type e2-medium \
+  --disk-size 50GB
+  
+  
+  --------------------------------------------------------------------------------------
+  (for execution)
+  kubectl create namespace monitoring
+  
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm install prometheus-grafana grafana/grafana -n monitoring
+
+  
+  
+  --------------------------------------------------------------------------------------------
+3) for finding user name for grafana 
+
+kubectl get secret prometheus-grafana -n monitoring -o jsonpath="{.data.admin-user}" | base64 --decode ; echo 
+
+4) for finding password for grafana
+
+kubectl get secret prometheus-grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 --decode ; echo  
+
+5) port forwarding
+
+kubectl port-forward svc/prometheus-grafana 3000:80 -n monitoring
+
+
+Delete cluster
+disable kubernetes engine API 
+
+
+=================================================================================================
+
+
+
+
+//week12  Setup Prometheus for Devops.
+
+1) enable kubernetes engine API 
+2) create cluster 
+
+gcloud container clusters create my-cluster \
+  --zone us-central1-a \
+  --num-nodes 2 \
+  --machine-type e2-medium \
+  --disk-size 50GB
+  
+3) for prometheus setup 
+
+helm repo add prometheus  https://prometheus-community.github.io/helm-charts 
+
+4) for update 
+
+helm repo update 
+
+5) This will install prometheus,alermanager and grafana (takes 2min)
+
+helm install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
+
+6) Check the prometheus pods and services
+
+kubectl get pods -n monitoring
+
+kubectl get svc -n monitoring
+
+7) Access prometheus and port forwarding
+
+kubectl port-forward svc/prometheus-kube-prometheus-prometheus 9090:9090 -n monitoring 
+
+
+Delete cluster
+disable kubernetes engine API 
+
+=================================================================================================
+[02-06-2025 12:05 PM] Nishwanth CSD CMRIT: // launch 3 instancecs ansible,server1,server2  create key pair with name "p0.pem"
+http 
+custom tcp    8080
+ssh
+
+//save inbound rules
+
+//type cmds in aws
+
+sudo apt update 
+
+sudo apt install ansible
+
+sudo apt install openssh-client
+
+sudo apt install openssh-server
+
+cd ~/.ssh/
+
+ls 
+
+cd 
+
+cd - 
+
+cd 
+
+-------------------------------------------
+//open puttygen click on load 
+//down all files 
+//select pem file 
+//click on save privatekey "private.ppk"
+-----------------------------------------------
+//open winscp software 
+//hostname  - ip address of ansible(instance)
+//username  - ubuntu
+//click on advancec -> authentication -> inplace of private key keep .ppk file 
+//ok -> login
+
+-----------------------------------------------
+
+//it will show 2 directories
+//local and ssh directory
+//click on new -> directory ->create a folder with name "key"
+//now drag and drop .pem file from local directory to ssh directory
+-----------------------------------------------
+//now open aws
+
+cd
+
+ls  //see key 
+
+cd key/   //see .pem file 
+
+cp p0.pem ~/.ssh/
+
+cd 
+
+ls ~/.ssh/
+
+---------------
+
+//for creating directory 
+
+mkdir ansible-script
+
+cd ansible-script/      //navigate to directory
+
+vim inventory.ini 
+//paste code 
+[webservers]
+server1 ansible_host=51.21.2.199 ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/.ssh/p0.pem
+server2 ansible_host=51.20.105.87 ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/.ssh/p0.pem
+=================
+vim playbook.yml
+
+- name: Install Nginx on AWS EC2
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Start and enable Nginx server
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+        
+==========================================
+
+//run where the files exists inventory.ini and playbook.yml
+
+ansible-playbook -i  playbook.yml
+
+ansible-playbook -i inventory.ini playbook.yml
+
+//yes x 3
+
+cd 
+
+cd ~/.ssh/ 
+
+//again run 
+
+
+
+chmod 600 /home/ubuntu/.ssh/p0.pem
+
+
+ansible-playbook -i inventory.ini playbook.yml
+[02-06-2025 12:05 PM] Nishwanth CSD CMRIT: //Install Docker and chack status and Start Docker in mobaXterm
+
+sudo apt update -y
+
+sudo apt install docker.io -y
+
+sudo systemctl status docker   //if running means no problem if not 
+
+//  sudo systemctl start docker 
+
+-----------------------------------------------
+
+//grant access 
+
+sudo usermod -aG docker ubuntu 
+
+//log out and login to reflect changes 
+
+---------------------------------------------------
+
+//create application and docker file in mobaxtrem
+
+mkdir docker1
+
+cd docker1
+
+vim app.py
+
+print("Hello World")
+
+cat app.py
+
+==
+
+//dockerfile
+
+vim dockerfile
+
+FROM ubuntu:latest
+
+WORKDIR /app 
+
+COPY . /app 
+
+RUN apt-get update && apt-get install -y python3 python3-pip
+
+ENV NAME World
+
+CMD ["python3", "app.py"]
+
+---------------------------------------------------
+
+//Build and Check Docker image
+
+docker build -t vishalbarad/dockerimage:latest .
+
+docker images
+
+----------------------------------------------------
+
+//run the docker container
+
+docker run -it vishalbarad/dockerimage:latest 
+
+------------------------------------------------------
+
+//docker login
+
+--------------------------------------------------------
+
+//Push the Image to DockerHub 
+
+docker push vishalbarad/dockerimage:latest
